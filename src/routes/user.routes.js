@@ -1,6 +1,7 @@
 import {Router} from "express";
-import {registerUser} from "../controllers/user.controller.js"
+import {loginUser, logoutUser, registerUser} from "../controllers/user.controller.js"
 import { upload } from "../middlewares/multer.middleware.js"; //this is the multer middlewear for file upload
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router=Router()
 
@@ -16,5 +17,11 @@ router.route("/register").post(
         }
     ])
     ,registerUser)
+
+
+router.route("/login").post(loginUser)
+
+//secured routes
+router.route("/logout").post(verifyJWT,logoutUser) //middleware injected to add user object in req
 
 export default router
