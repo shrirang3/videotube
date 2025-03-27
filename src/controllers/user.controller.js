@@ -42,7 +42,12 @@ const registerUser=asyncHandler(async(req, res)=>{
 
     //file handling
     const avatarLocalpath=req.files?.avatar[0]?.path; //from multer middlewear
-    const coverImageLocalPath=req.files?.coverImage[0]?.path;
+    //const coverImageLocalPath=req.files?.coverImage[0]?.path;
+    //checking coverImgae exists or not 
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){
+        coverImageLocalPath=req.files.coverImage[0].path
+    }
 
     if(!avatarLocalpath){
         throw new ApiError(400, "Avatar file needed")
