@@ -111,7 +111,7 @@ const loginUser=asyncHandler(async(req, res)=>{
     //send cookie
 
     const {email, username, password}=req.body
-    if (!username || !email) {
+    if (!username && !email) {
         throw new ApiError(400, 'username or email is required')
     }
 
@@ -133,7 +133,7 @@ const loginUser=asyncHandler(async(req, res)=>{
     const {accessToken, refereshToken}=await generateAccessAndRefereshToken(user._id)
     //send in cookie
 
-    const loggedInUser=User.findById(user._id).select("-password -refreshToken")
+    const loggedInUser=await User.findById(user._id).select("-password -refreshToken")
 
     const options= {
         httpOnly:true,
