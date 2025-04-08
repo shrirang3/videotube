@@ -13,7 +13,7 @@ router.route("/register").post(
         },
 
         {
-            name:"coverImage",
+            name:"coverImage",   //this name should be same in frontend of field
             maxCount:1
         }
     ])
@@ -23,7 +23,7 @@ router.route("/register").post(
 router.route("/login").post(loginUser)
 
 //secured routes
-router.route("/logout").post(verifyJWT,logoutUser) //middleware injected to add user object in req
+router.route("/logout").post(verifyJWT,logoutUser)    //middleware injected to add user object in req
 router.route("/refresh-token").post(refreshAccessToken)
 
 export default router
