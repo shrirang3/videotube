@@ -232,8 +232,116 @@ const refreshAccessToken=asyncHandler(async(req, res)=>{
     }
 })
 
+const changeCurrentPassword=asyncHandler(async(req, res)=>{
+
+    const {oldPassword, newPassword}=req.body
+    const user=await User.findById(req.user?._id)
+
+    //checking if old pass is correct
+    const isPasswordCorrect=await user.isPasswordCorrect(oldPassword)
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid old Pass")
+    }
+
+    user.password=newPassword
+    user.save({validateBeforeSave:false})
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"))
+    
+})
+
+const getCurrentUser=asyncHandler(async(req, res)=>{
+    //user has aldready been injected in req coz of middleware
+    return res
+    .status(200)
+    .json(200, req.user, "current user fetched successfully") //middleware has been run on my req
+})
+
+const updateAccountDetails=asyncHandler(async(req, res)=>{
+    //updating account details
+    const {fullName, email}=req.body
+    if(!fullName || !email){
+        throw new ApiError(400, "All fields are required")
+    }
+
+    const user=User.findByIdAndUpdate(req.user?._id,
+        {
+            $set: {
+                fullName,
+                email:email
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res.status(200)
+    .json(new ApiResponse(200, user, "Account Details Updated successfully"))
+})
+
+
+//file updation should be done seperately
+const updateuserAvatar=asyncHandler(async(req, res)=>{
+    const avatarLocalpath=req.files?.path
+    if(!avatarLocalpath){
+        throw new ApiError(400, "Avatar file is missing")
+    }
+
+    const avatar=await uploadonCloudinary(avatarLocalpath)
+
+    if(!avatar.url){
+        throw new ApiError(400, "Error while uploading on avatar")
+    }
+
+    const user=await User.findByIdAndUpdate(req.user?._id,
+        {
+            $set:{
+                avatar:avatar.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar Image updated successfully"))
+})
+
+const updateuserCoverImage=asyncHandler(async(req, res)=>{
+    const coverLocalpath=req.files?.path
+    if(!coverLocalpath){
+        throw new ApiError(400, "Cover file is missing")
+    }
+
+    const cover=await uploadonCloudinary(coverLocalpath)
+
+    if(!cover.url){
+        throw new ApiError(400, "Error while uploading on cover image")
+    }
+
+    const user=await User.findByIdAndUpdate(req.user?._id,
+        {
+            $set:{
+                coverImage:cover.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Cover Image updated successfully"))
+})
+
 export {registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateuserAvatar,
+    updateuserCoverImage
 }
