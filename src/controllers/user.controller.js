@@ -267,7 +267,7 @@ const updateAccountDetails=asyncHandler(async(req, res)=>{
         throw new ApiError(400, "All fields are required")
     }
 
-    const user=User.findByIdAndUpdate(req.user?._id,
+    const user=await User.findByIdAndUpdate(req.user?._id,
         {
             $set: {
                 fullName,
@@ -336,6 +336,78 @@ const updateuserCoverImage=asyncHandler(async(req, res)=>{
     .json(new ApiResponse(200, user, "Cover Image updated successfully"))
 })
 
+const getUserChannelProfile=asyncHandler(async(req, res)=>{
+    const {username}=req.params //we will be fetching it from routes like videotube.com/shrirang=>thus using params
+    
+    if(!username?.trim()){
+        throw new ApiError(400, "Username is missing")
+    }
+
+    //using Aggregation pipeline
+    const channel=await User.aggregate([
+        {
+            $match:{
+                username:username?.toLowerCase()
+            }
+        },
+        {
+            $lookup:{
+                from:"subscriptions",    //export const Subscription=mongoose.model("Subscription", subscriptionSchema)
+                localField:"_id",                      //everything is converted to lowercase and becomes plural
+                foreignField:"channel",
+                as:"subscribers"
+            }
+        },
+        {
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",      //using lookup to get count of subscribed To count
+                foreignField:"subscriber",
+                as:"subscribedTo"
+            }
+        },
+        {
+            $addFields:{
+                subscribersCount: {
+                    $size:"$subscribers" 
+                },
+                channelsSubscribedToCount:{  //using size function to get exact count of subs subsTo
+                    $size:"$subscribedTo"
+                },
+                isSubscribed:{
+                    $cond: {
+                        if: {$in:[req.user?._id, "$subscribers.subscriber"]}, //checking if the user who is 
+                        // viewing has subscribed to profile he is viewing
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                //only sends mentioned info to frontend
+                fullName: 1,
+                username: 1,
+                subscribersCount:1,
+                channelsSubscribedToCount:1,
+                isSubscribed:1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
+            }
+        }
+    ])
+
+    if(!channel?.length){
+        throw new ApiError(404, "channel does not exist")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, channel[0], "User channel fetched succesfully"))
+})
+
 export {registerUser,
     loginUser,
     logoutUser,
@@ -343,5 +415,6 @@ export {registerUser,
     changeCurrentPassword,
     getCurrentUser,
     updateuserAvatar,
-    updateuserCoverImage
+    updateuserCoverImage,
+    getUserChannelProfile
 }
